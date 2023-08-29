@@ -31,6 +31,8 @@
     "@nestjs/platform-express": "^9.0.0",
     "dotenv": "^16.3.1",
     "graphql": "^16.8.0",
+    "keycloak-connect": "^21.1.2",
+    "nest-keycloak-connect": "^1.9.2",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0"
   },

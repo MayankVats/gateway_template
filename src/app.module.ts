@@ -6,34 +6,42 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloGatewayDriver, ApolloGatewayDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { IntrospectAndCompose } from '@apollo/gateway';
+import { AuthGuard, KeycloakConnectModule } from 'nest-keycloak-connect';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigService } from './config/config.service';
+import { subgraphs } from './shared/subgraphs';
+import { authContext } from './shared/authContext';
+
+const configService = new ConfigService();
+const config = configService.get();
 
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloGatewayDriverConfig>({
       driver: ApolloGatewayDriver,
       server: {
-        // TODO: Make it environment specific
         playground: false,
-        plugins: [ApolloServerPluginLandingPageLocalDefault()],
+        context: authContext,
+        plugins:
+          config.NODE_ENV === 'dev'
+            ? [ApolloServerPluginLandingPageLocalDefault()]
+            : [],
       },
       gateway: {
         supergraphSdl: new IntrospectAndCompose({
-          subgraphs: [
-            {
-              name: 'users',
-              url: 'http://127.0.0.1:8080/graphql',
-            },
-            {
-              name: 'posts',
-              url: 'http://127.0.0.1:8081/graphql',
-            },
-          ],
+          subgraphs: subgraphs,
         }),
       },
+    }),
+    KeycloakConnectModule.register({
+      authServerUrl: 'http://localhost:8080',
+      realm: 'master',
+      clientId: 'my-nestjs-app',
+      secret: 'secret',
     }),
     ConfigModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}

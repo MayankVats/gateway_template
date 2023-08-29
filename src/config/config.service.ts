@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 interface ConfigData {
-  ENV: string;
+  NODE_ENV: string;
   PORT: number;
   DATABASE_URL: string;
 }
@@ -20,7 +20,7 @@ export class ConfigService {
 
   private parseConfigFromEnv(env: NodeJS.ProcessEnv): ConfigData {
     return {
-      ENV: env.NODE_ENV || 'dev',
+      NODE_ENV: env.NODE_ENV || 'dev',
       PORT: parseInt(env.PORT) || 3000,
       DATABASE_URL: env.DATABASE_URL,
     };
