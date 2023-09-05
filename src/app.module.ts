@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from './config/config.module';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -41,7 +40,7 @@ const config = configService.get();
     }),
     ConfigModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [AppService, { provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}
