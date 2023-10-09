@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model access_points {
+  id                  String    @id(map: "access_point_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  spintly_id          Int?      @unique(map: "access_point_spintly_id_key")
+  name                String    @db.VarChar(60)
+  for_access          Boolean   @default(true)
+  for_attendance      Boolean   @default(false)
+  site_id             String?   @db.Uuid
+  installation_method Int?
+  configuration       Int?
+  organisation_id     String?   @db.Uuid
+  is_active           Boolean   @default(true)
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  created_by          String?   @db.Uuid
+  network_id          String?
+  users               users?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "access_point_created_by_fkey")
+  sites               sites?    @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: Restrict, map: "access_point_site_id_fkey")
+  locks               locks[]
+}
+
+model locks {
+  id                           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serial_number                String         @db.VarChar(60)
+  status                       String?        @db.VarChar(24)
+  battery                      Float?
+  is_active                    Boolean        @default(true)
+  site_id                      String?        @db.Uuid
+  organisation_id              String?        @db.Uuid
+  created_at                   DateTime?      @default(now()) @db.Timestamp(6)
+  created_by                   String?        @db.Uuid
+  device_type                  String?        @default("ENTRY") @db.VarChar(10)
+  access_point_id              String?        @db.Uuid
+  mobile_access_mode           Int?
+  privacy_mode                 Boolean        @default(false)
+  network_id                   String?
+  battery_status_changed_at    DateTime?      @db.Timestamptz(6)
+  passage_mode_status          String?        @db.VarChar(20)
+  is_passage_mode_status_error Boolean        @default(false)
+  passage_mode_updated_at      DateTime?      @db.Timestamp(6)
+  name                         String         @db.VarChar(30)
+  area_of_house                String         @db.VarChar(20)
+  image                        String?        @db.VarChar(255)
+  access_points                access_points? @relation(fields: [access_point_id], references: [id], onDelete: NoAction, onUpdate: Restrict)
+  users                        users?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organisations                organisations? @relation(fields: [organisation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sites                        sites?         @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([access_point_id], map: "fki_locks_access_point_id_fkey")
+}
+
+model organisations {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String    @db.VarChar(64)
+  is_active             Boolean   @default(true)
+  created_at            DateTime? @default(now()) @db.Timestamp(6)
+  created_by            String?   @db.Uuid
+  spintly_id            BigInt?   @unique
+  spintly_partner_id    BigInt?
+  country               String?   @db.Char(5)
+  spintly_integrator_id BigInt?
+  locks                 locks[]
+  users                 users?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: Restrict)
+  sites                 sites[]
+}
+
+model roles {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String    @db.VarChar(255)
+  code       String    @unique @db.VarChar(30)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  created_by String?   @db.Uuid
+  users      users?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model sites {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String          @db.VarChar(64)
+  organisation_id String          @db.Uuid
+  is_active       Boolean         @default(true)
+  created_at      DateTime?       @default(now()) @db.Timestamp(6)
+  created_by      String?         @db.Uuid
+  location        String?         @db.VarChar(60)
+  spintly_id      Int?            @unique
+  timezone        String?
+  access_points   access_points[]
+  locks           locks[]
+  users           users?          @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organisations   organisations   @relation(fields: [organisation_id], references: [id], onDelete: NoAction, onUpdate: Restrict)
+}
+
+model users {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth_id       String          @db.Uuid
+  mobile_number String          @db.VarChar(15)
+  email         String?         @db.VarChar(255)
+  name          String?         @db.VarChar(255)
+  mobile_code   String?         @db.VarChar(4)
+  is_active     Boolean         @default(true)
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  created_by    String?         @db.Uuid
+  access_points access_points[]
+  locks         locks[]
+  organisations organisations[]
+  roles         roles[]
+  sites         sites[]
+  users         users?          @relation("usersTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_users   users[]         @relation("usersTousers")
+}
